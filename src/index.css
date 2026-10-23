@@ -197,8 +197,8 @@ html, body {
 .header-stats {
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex-shrink: 1;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .stat-chip {
@@ -230,7 +230,7 @@ html, body {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px;
+  padding: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -245,10 +245,18 @@ html, body {
 /* Header Role Switcher Bar */
 .header-role-bar {
   width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.header-role-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .role-badge-selector {
   display: flex;
+  min-width: 100%;
   width: 100%;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -259,10 +267,11 @@ html, body {
 
 .role-pill-btn {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -278,6 +287,23 @@ html, body {
 .role-pill-btn.active {
   background: var(--accent-green);
   color: #0A1F14;
+}
+
+@media (max-width: 380px) {
+  .header-user-name {
+    max-width: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .network-label {
+    display: none;
+  }
+  .logout-label {
+    display: none;
+  }
+  .brand-title {
+    font-size: 14px;
+  }
 }
 
 /* Main Content Area */

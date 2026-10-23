@@ -15,12 +15,14 @@ import { LessonPlayer } from './components/LessonPlayer';
 import { RoleGuard } from './components/RoleGuard';
 import { RoleAuthModal } from './components/RoleAuthModal';
 import { StudentAuthModal } from './components/StudentAuthModal';
+import { AuthGateView } from './views/AuthGateView';
 import type { Zone } from './data/zones';
 
 const MainAppContent: React.FC = () => {
   const { 
     activeTab, 
     setActiveTab, 
+    isAuthenticated,
     isStudentAuthModalOpen, 
     closeStudentAuthModal, 
     studentAuthMode 
@@ -45,7 +47,9 @@ const MainAppContent: React.FC = () => {
       />
 
       <main className="main-content">
-        {isPlayingLesson ? (
+        {!isAuthenticated ? (
+          <AuthGateView />
+        ) : isPlayingLesson ? (
           <LessonPlayer onBack={() => setIsPlayingLesson(false)} />
         ) : (
           <>
@@ -82,7 +86,7 @@ const MainAppContent: React.FC = () => {
         )}
       </main>
 
-      {!isPlayingLesson && <BottomNav />}
+      {isAuthenticated && !isPlayingLesson && <BottomNav />}
     </div>
   );
 };

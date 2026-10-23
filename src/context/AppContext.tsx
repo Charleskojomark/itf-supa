@@ -27,6 +27,9 @@ export type ActiveTab = 'today' | 'zones' | 'lab' | 'squad' | 'portfolio' | 'ass
 interface AppContextType {
   profile: LearnerProfile | null;
   setProfile: (profile: LearnerProfile | null) => void;
+  isAuthenticated: boolean;
+  loginUser: (user: any) => Promise<void>;
+  logoutUser: () => void;
   role: UserRole;
   currentUser: AppUser;
   setRole: (role: UserRole) => void;
@@ -75,6 +78,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [role, setRoleState] = useState<UserRole>('learner');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [targetAuthRole, setTargetAuthRole] = useState<UserRole | null>(null);
@@ -116,8 +120,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsStudentAuthModalOpen(false);
   };
 
+  const loginUser = async (user: any) => {
+    const newProfile: LearnerProfile = {
+      id: user.id,
+      fullName: user.fullName,
+      displayName: user.fullName ? user.fullName.split(' ')[0] : 'Cadet',
+      phoneNumber: user.phoneNumber || '',
+      avatar: user.avatar || '👨🏾‍💻',
+      squadId: user.squadId || 'squad-eko-01',
+      role: (user.role as UserRole) || 'learner',
+      currentZone: user.currentZone || 1,
+      xp: user.xp || 50,
+      level: user.level || 1,
+      streakDays: user.streakDays || 1,
+      graceTokens: user.graceTokens ?? 3,
+      totalTheorySeconds: user.totalTheorySeconds || 0,
+      totalPracticalSeconds: user.totalPracticalSeconds || 0,
+      ndpaConsent: { consented: true, timestamp: Date.now(), version: '1.0-2026' },
+      accessibility: { readSimply: false, voiceEnabled: true, highContrast: false, speechRate: 1.0 },
+      lastActive: Date.now(),
+    };
+    await saveProfile(newProfile);
+    localStorage.setItem('itf_supa_active_session', JSON.stringify({ id: user.id, role: newProfile.role }));
+    setProfile(newProfile);
+    setRoleState(newProfile.role);
+    setIsAuthenticated(true);
+    setActiveTabState('today');
+  };
+
+  const logoutUser = () => {
+    localStorage.removeItem('itf_supa_active_session');
+    setProfile(null);
+    setRoleState('learner');
+    setIsAuthenticated(false);
+    setActiveTabState('today');
+  };
+
   const setRoleWithAuth = (newRole: UserRole) => {
     setRoleState(newRole);
+    setIsAuthenticated(true);
+    localStorage.setItem('itf_supa_active_session', JSON.stringify({ id: 'staff_' + newRole, role: newRole }));
     if (profile) {
       saveProfile({ ...profile, role: newRole });
     }
@@ -249,16 +291,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Initialize DB and load profile
+  // Initialize DB and restore active session if present
   useEffect(() => {
     async function loadData() {
-      const p = await getOrCreateCurrentProfile();
-      setProfile(p);
-      setRoleState(p.role);
-      setReadSimply(p.accessibility?.readSimply ?? false);
-      if (!p.ndpaConsent?.consented) {
-        setShowNdpaModal(true);
+      try {
+        const rawSession = localStorage.getItem('itf_supa_active_session');
+        if (rawSession) {
+          const session = JSON.parse(rawSession);
+          if (session?.role && session.role !== 'learner') {
+            setRoleState(session.role);
+            setIsAuthenticated(true);
+            return;
+          }
+          if (session?.id) {
+            const { db } = await import('../services/db');
+            const p = await db.profiles.get(session.id);
+            if (p) {
+              setProfile(p);
+              setRoleState(p.role || 'learner');
+              setIsAuthenticated(true);
+              setReadSimply(p.accessibility?.readSimply ?? false);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not restore user session:', err);
       }
+      // No active session -> require login
+      setIsAuthenticated(false);
+      setProfile(null);
     }
     loadData();
   }, []);
@@ -344,6 +406,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         profile,
         setProfile,
+        isAuthenticated,
+        loginUser,
+        logoutUser,
         role,
         currentUser,
         setRole,
