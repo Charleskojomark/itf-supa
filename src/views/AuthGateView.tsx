@@ -134,7 +134,7 @@ export const AuthGateView: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '16px 14px 40px', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '85vh' }}>
+    <div style={{ padding: '16px 14px 40px', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '85vh', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       {/* Official Government & Program Badge */}
       <div 
         className="card"
@@ -143,6 +143,9 @@ export const AuthGateView: React.FC = () => {
           border: '1px solid var(--border-medium)',
           textAlign: 'center',
           padding: '18px 14px',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
         }}
       >
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(0, 230, 118, 0.15)', padding: '3px 10px', borderRadius: 'var(--radius-pill)', fontSize: '10px', fontWeight: 800, color: 'var(--accent-green)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '8px' }}>
@@ -382,7 +385,7 @@ export const AuthGateView: React.FC = () => {
 
       {/* TAB 2: CREATE STUDENT ACCOUNT */}
       {tab === 'register' && (
-        <form onSubmit={handleStudentRegister} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <form onSubmit={handleStudentRegister} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
               Create Student Account
@@ -509,6 +512,8 @@ export const AuthGateView: React.FC = () => {
               onChange={(e) => setRegSquadId(e.target.value)}
               style={{
                 width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
                 background: 'var(--bg-primary)',
                 border: '1px solid var(--border-medium)',
                 borderRadius: '8px',
@@ -531,20 +536,27 @@ export const AuthGateView: React.FC = () => {
             <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '5px' }}>
               Choose Cadet Avatar:
             </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px', width: '100%', boxSizing: 'border-box' }}>
               {avatarsList.map((av) => (
                 <button
                   type="button"
                   key={av}
                   onClick={() => setRegAvatar(av)}
                   style={{
-                    flex: 1,
-                    fontSize: '20px',
-                    padding: '8px',
+                    width: '100%',
+                    minWidth: 0,
+                    aspectRatio: '1',
+                    maxHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    padding: '2px',
                     borderRadius: '8px',
                     border: regAvatar === av ? '2px solid var(--accent-green)' : '1px solid var(--border-subtle)',
                     background: regAvatar === av ? 'rgba(0, 230, 118, 0.15)' : 'var(--bg-primary)',
                     cursor: 'pointer',
+                    boxSizing: 'border-box',
                   }}
                 >
                   {av}

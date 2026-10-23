@@ -277,15 +277,17 @@ export const StudentAuthModal: React.FC<StudentAuthModalProps> = ({
                 <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
                   Choose Your Cadet Avatar:
                 </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px', width: '100%', boxSizing: 'border-box' }}>
                   {avatarsList.map((av) => (
                     <button
                       key={av}
                       type="button"
                       onClick={() => setAvatar(av)}
                       style={{
-                        width: '38px',
-                        height: '38px',
+                        width: '100%',
+                        minWidth: 0,
+                        aspectRatio: '1',
+                        maxHeight: '44px',
                         borderRadius: '8px',
                         border: avatar === av ? '2px solid var(--accent-green)' : '1px solid var(--border-subtle)',
                         background: avatar === av ? 'rgba(0, 230, 118, 0.15)' : 'var(--bg-primary)',
@@ -294,6 +296,8 @@ export const StudentAuthModal: React.FC<StudentAuthModalProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        boxSizing: 'border-box',
+                        padding: '2px',
                       }}
                     >
                       {av}
