@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   FileCheck2, 
@@ -8,12 +8,15 @@ import {
   ExternalLink, 
   CheckCircle2, 
   Download,
-  Calendar
+  Calendar,
+  ShieldCheck,
+  CheckCheck
 } from 'lucide-react';
 import { ITF_CRITERIA_LIST } from '../data/criteria';
 
 export const PortfolioView: React.FC = () => {
-  const { profile, practicalRatioPercent, exportData } = useApp();
+  const { profile, practicalRatioPercent, exportData, role, currentUser } = useApp();
+  const [isSignedOff, setIsSignedOff] = useState<boolean>(false);
 
   const completedCriteria = ITF_CRITERIA_LIST.filter(
     (c) => c.status === 'competent' || c.status === 'confident'
@@ -21,7 +24,7 @@ export const PortfolioView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Portfolio Profile Card */}
+      {/* Portfolio Profile Card with Role Adaptations */}
       <div 
         className="card"
         style={{
@@ -32,27 +35,46 @@ export const PortfolioView: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div 
             style={{ 
-              width: 52, 
-              height: 52, 
+              width: 50, 
+              height: 50, 
               borderRadius: '50%', 
               background: 'rgba(0, 230, 118, 0.2)', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              fontSize: '26px',
+              fontSize: '24px',
               border: '2px solid var(--accent-green)',
+              flexShrink: 0,
             }}
           >
-            {profile?.avatar || '🚀'}
+            {role === 'learner' ? (profile?.avatar || '👨🏾‍💻') : currentUser.avatar}
           </div>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '18px', fontWeight: 800 }}>
-              {profile?.fullName || 'Chidi Okonkwo'}
-            </h1>
-            <div style={{ fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 600 }}>
-              Level {profile?.level || 1} AI Specialist Cadet • Batch 26-03
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '17px', fontWeight: 800 }}>
+                {role === 'learner' ? (profile?.fullName || 'Chidi Okonkwo') : 'Candidate: Chidi Okonkwo'}
+              </h1>
+              {role === 'assessor' && (
+                <span 
+                  style={{ 
+                    fontSize: '9px', 
+                    background: 'rgba(0, 230, 118, 0.2)', 
+                    color: 'var(--accent-green)', 
+                    padding: '2px 6px', 
+                    borderRadius: '4px',
+                    fontWeight: 800
+                  }}
+                >
+                  AUDIT MODE
+                </span>
+              )}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 600 }}>
+              {role === 'learner' 
+                ? `Level ${profile?.level || 1} AI Specialist Cadet • Batch 26-03`
+                : `Audited by: ${currentUser.name} (${currentUser.organization.split('(')[0]})`}
+            </div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
               Standard: 27ITFVS26-3 (Level 3 Vocational Standard)
             </div>
           </div>
@@ -84,15 +106,35 @@ export const PortfolioView: React.FC = () => {
           </div>
         </div>
 
-        {/* Export JSON / Backup Button */}
-        <button 
-          className="btn btn-secondary btn-sm"
-          onClick={exportData}
-          style={{ width: '100%', marginTop: '12px', gap: '6px' }}
-        >
-          <Download size={14} />
-          Download Offline JSON Evidence Pack
-        </button>
+        {/* Role-Specific Actions */}
+        {role === 'assessor' ? (
+          <button 
+            className="btn btn-primary btn-sm"
+            onClick={() => setIsSignedOff(!isSignedOff)}
+            style={{ width: '100%', marginTop: '12px', gap: '6px' }}
+          >
+            <ShieldCheck size={14} />
+            {isSignedOff ? '✓ Evidence Pack Verified & Digitally Signed' : 'Apply Official Assessor Verification Stamp'}
+          </button>
+        ) : role === 'tutor' ? (
+          <button 
+            className="btn btn-gold btn-sm"
+            onClick={() => alert('Candidate Chidi Okonkwo endorsed for external SUPA assessment review.')}
+            style={{ width: '100%', marginTop: '12px', gap: '6px' }}
+          >
+            <CheckCheck size={14} />
+            Endorse Cadet for SUPA Board Review
+          </button>
+        ) : (
+          <button 
+            className="btn btn-secondary btn-sm"
+            onClick={exportData}
+            style={{ width: '100%', marginTop: '12px', gap: '6px' }}
+          >
+            <Download size={14} />
+            Download Offline JSON Evidence Pack
+          </button>
+        )}
       </div>
 
       {/* Verified Competencies Accordion */}

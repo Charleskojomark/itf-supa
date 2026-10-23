@@ -82,6 +82,16 @@ export const BottomNav: React.FC = () => {
           </div>
           <span className="nav-label">Criteria Gap</span>
         </button>
+
+        <button 
+          className={`nav-item ${activeTab === 'portfolio' ? 'active' : ''}`}
+          onClick={() => setActiveTab('portfolio')}
+        >
+          <div className="nav-icon-wrapper">
+            <FileCheck2 size={20} />
+          </div>
+          <span className="nav-label">Submissions</span>
+        </button>
       </nav>
     );
   }

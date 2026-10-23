@@ -18,12 +18,21 @@ import {
 import { SEED_LESSONS } from '../data/lessons';
 import { NAIJA_ZONES, type Zone } from '../data/zones';
 
+import { ROLE_CONFIGS, type AppUser } from '../types/rbac';
+import { SYSTEM_USERS } from '../data/mockUsers';
+
 export type ActiveTab = 'today' | 'zones' | 'lab' | 'squad' | 'portfolio' | 'assessor_matrix' | 'tutor_dash';
 
 interface AppContextType {
   profile: LearnerProfile | null;
   role: UserRole;
+  currentUser: AppUser;
   setRole: (role: UserRole) => void;
+  setRoleWithAuth: (role: UserRole) => void;
+  isAuthModalOpen: boolean;
+  targetAuthRole: UserRole | null;
+  openAuthModal: (role?: UserRole) => void;
+  closeAuthModal: () => void;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   isOnline: boolean;
@@ -61,7 +70,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [role, setRoleState] = useState<UserRole>('learner');
-  const [activeTab, setActiveTab] = useState<ActiveTab>('today');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [targetAuthRole, setTargetAuthRole] = useState<UserRole | null>(null);
+  const [activeTab, setActiveTabState] = useState<ActiveTab>('today');
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(SEED_LESSONS[1]); // Default to Week 2 Day 1
@@ -71,105 +82,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [showNdpaModal, setShowNdpaModal] = useState<boolean>(false);
   const [readSimply, setReadSimply] = useState<boolean>(false);
 
-  // Initialize DB and load profile
-  useEffect(() => {
-    async function loadData() {
-      const p = await getOrCreateCurrentProfile();
-      setProfile(p);
-      setRoleState(p.role);
-      setReadSimply(p.accessibility?.readSimply ?? false);
-      if (!p.ndpaConsent?.consented) {
-        setShowNdpaModal(true);
-      }
+  // Active User Persona mapped to current Role
+  const currentUser: AppUser = useMemo(() => {
+    return SYSTEM_USERS[role] || SYSTEM_USERS.learner;
+  }, [role]);
+
+  const openAuthModal = (desiredRole?: UserRole) => {
+    if (desiredRole) {
+      setTargetAuthRole(desiredRole);
     }
-    loadData();
-  }, []);
-
-  // Sync theme attribute to <html> element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // Monitor network status
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Load progress when activeLesson changes
-  useEffect(() => {
-    if (profile && activeLesson) {
-      getLessonProgress(profile.id, activeLesson.id).then((prog) => {
-        if (prog) {
-          setCurrentLessonProgress(prog);
-          setActiveStepNumber(Math.min(prog.currentStep, 7));
-        } else {
-          setCurrentLessonProgress(null);
-          setActiveStepNumber(1);
-        }
-      });
-    }
-  }, [profile, activeLesson]);
-
-  // Compute live 20/80 practical ratio
-  const practicalRatioPercent = useMemo(() => {
-    if (!profile) return 80;
-    const total = profile.totalPracticalSeconds + profile.totalTheorySeconds;
-    if (total === 0) return 80; // default benchmark
-    return Math.round((profile.totalPracticalSeconds / total) * 100);
-  }, [profile]);
-
-  // Web Speech API Narrator (zero cost, zero data)
-  const speakText = (text: string) => {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = profile?.accessibility.speechRate || 1.0;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
+    setIsAuthModalOpen(true);
   };
 
-  const stopSpeaking = () => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+    setTargetAuthRole(null);
   };
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
-
-  const toggleReadSimply = async () => {
-    const nextVal = !readSimply;
-    setReadSimply(nextVal);
+  const setRoleWithAuth = (newRole: UserRole) => {
+    setRoleState(newRole);
     if (profile) {
-      const updated = {
-        ...profile,
-        accessibility: { ...profile.accessibility, readSimply: nextVal },
-      };
-      await saveProfile(updated);
-      setProfile(updated);
+      saveProfile({ ...profile, role: newRole });
+    }
+    const defaultTab = ROLE_CONFIGS[newRole]?.defaultTab as ActiveTab;
+    if (defaultTab) {
+      setActiveTabState(defaultTab);
     }
   };
 
   const setRole = (newRole: UserRole) => {
-    setRoleState(newRole);
-    if (newRole === 'assessor') {
-      setActiveTab('assessor_matrix');
-    } else if (newRole === 'tutor') {
-      setActiveTab('tutor_dash');
+    // If switching to higher clearance without authentication, trigger auth modal
+    if (newRole !== 'learner') {
+      openAuthModal(newRole);
     } else {
-      setActiveTab('today');
+      setRoleWithAuth('learner');
     }
+  };
+
+  const setActiveTab = (tab: ActiveTab) => {
+    setActiveTabState(tab);
   };
 
   const saveStep = async (
@@ -267,12 +218,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Initialize DB and load profile
+  useEffect(() => {
+    async function loadData() {
+      const p = await getOrCreateCurrentProfile();
+      setProfile(p);
+      setRoleState(p.role);
+      setReadSimply(p.accessibility?.readSimply ?? false);
+      if (!p.ndpaConsent?.consented) {
+        setShowNdpaModal(true);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Sync theme attribute to <html> element
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Monitor network status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Load progress when activeLesson changes
+  useEffect(() => {
+    if (profile && activeLesson) {
+      getLessonProgress(profile.id, activeLesson.id).then((prog) => {
+        if (prog) {
+          setCurrentLessonProgress(prog);
+          setActiveStepNumber(Math.min(prog.currentStep, 7));
+        } else {
+          setCurrentLessonProgress(null);
+          setActiveStepNumber(1);
+        }
+      });
+    }
+  }, [profile, activeLesson]);
+
+  // Compute live 20/80 practical ratio
+  const practicalRatioPercent = useMemo(() => {
+    if (!profile) return 80;
+    const total = profile.totalPracticalSeconds + profile.totalTheorySeconds;
+    if (total === 0) return 80; // default benchmark
+    return Math.round((profile.totalPracticalSeconds / total) * 100);
+  }, [profile]);
+
+  // Web Speech API Narrator (zero cost, zero data)
+  const speakText = (text: string) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = profile?.accessibility.speechRate || 1.0;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const toggleReadSimply = async () => {
+    const nextVal = !readSimply;
+    setReadSimply(nextVal);
+    if (profile) {
+      const updated = {
+        ...profile,
+        accessibility: { ...profile.accessibility, readSimply: nextVal },
+      };
+      await saveProfile(updated);
+      setProfile(updated);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
         profile,
         role,
+        currentUser,
         setRole,
+        setRoleWithAuth,
+        isAuthModalOpen,
+        targetAuthRole,
+        openAuthModal,
+        closeAuthModal,
         activeTab,
         setActiveTab,
         isOnline,

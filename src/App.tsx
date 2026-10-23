@@ -12,10 +12,12 @@ import { PortfolioView } from './views/PortfolioView';
 import { AssessorMatrixView } from './views/AssessorMatrixView';
 import { TutorDashboardView } from './views/TutorDashboardView';
 import { LessonPlayer } from './components/LessonPlayer';
+import { RoleGuard } from './components/RoleGuard';
+import { RoleAuthModal } from './components/RoleAuthModal';
 import type { Zone } from './data/zones';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, setActiveTab, setActiveLesson } = useApp();
+  const { activeTab, setActiveTab } = useApp();
   const [isPlayingLesson, setIsPlayingLesson] = useState<boolean>(false);
 
   const handleSelectZone = (zone: Zone) => {
@@ -28,6 +30,7 @@ const MainAppContent: React.FC = () => {
       <Header />
       <ErgonomicReminder />
       <NDPAConsentModal />
+      <RoleAuthModal />
 
       <main className="main-content">
         {isPlayingLesson ? (
@@ -35,16 +38,34 @@ const MainAppContent: React.FC = () => {
         ) : (
           <>
             {activeTab === 'today' && (
-              <TodayMissionView onStartLesson={() => setIsPlayingLesson(true)} />
+              <RoleGuard allowedRoles={['learner', 'tutor']} screenName="Today's Mission">
+                <TodayMissionView onStartLesson={() => setIsPlayingLesson(true)} />
+              </RoleGuard>
             )}
             {activeTab === 'zones' && (
               <NaijaMapView onSelectZone={handleSelectZone} />
             )}
-            {activeTab === 'lab' && <VisualLabView />}
-            {activeTab === 'squad' && <SquadView />}
+            {activeTab === 'lab' && (
+              <RoleGuard allowedRoles={['learner', 'tutor']} screenName="Interactive Visual Lab">
+                <VisualLabView />
+              </RoleGuard>
+            )}
+            {activeTab === 'squad' && (
+              <RoleGuard allowedRoles={['learner', 'tutor']} screenName="Squad Hub">
+                <SquadView />
+              </RoleGuard>
+            )}
             {activeTab === 'portfolio' && <PortfolioView />}
-            {activeTab === 'assessor_matrix' && <AssessorMatrixView />}
-            {activeTab === 'tutor_dash' && <TutorDashboardView />}
+            {activeTab === 'assessor_matrix' && (
+              <RoleGuard allowedRoles={['assessor', 'tutor']} screenName="SUPA 210 Criteria Standard Matrix">
+                <AssessorMatrixView />
+              </RoleGuard>
+            )}
+            {activeTab === 'tutor_dash' && (
+              <RoleGuard allowedRoles={['tutor']} screenName="Tutor Facilitator Oversight Hub">
+                <TutorDashboardView />
+              </RoleGuard>
+            )}
           </>
         )}
       </main>
