@@ -43,17 +43,17 @@ export const VariableMemoryBox: React.FC = () => {
         gap: '14px',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '14px', fontWeight: 700, color: 'var(--accent-green)' }}>
-          RAM Memory Boxes (RAM Simulation)
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+        <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '13px', fontWeight: 700, color: 'var(--accent-green)', whiteSpace: 'nowrap' }}>
+          RAM Memory State (Simulation)
         </h4>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
           Tap a box to inspect
         </span>
       </div>
 
       {/* Grid of Memory Boxes */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
         {vars.map((v) => {
           const isSelected = activeVar.name === v.name;
           return (
@@ -67,14 +67,27 @@ export const VariableMemoryBox: React.FC = () => {
                 background: isSelected ? 'rgba(0, 230, 118, 0.15)' : 'var(--bg-primary)',
                 border: isSelected ? `2px solid ${v.color}` : '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
-                padding: '12px',
+                padding: '10px',
                 cursor: 'pointer',
                 transition: 'var(--transition-fast)',
                 position: 'relative',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'var(--font-code)', fontSize: '12px', fontWeight: 700, color: v.color }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
+                <span 
+                  style={{ 
+                    fontFamily: 'var(--font-code)', 
+                    fontSize: '11px', 
+                    fontWeight: 700, 
+                    color: v.color,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                  title={v.name}
+                >
                   {v.name}
                 </span>
                 <span 
@@ -85,6 +98,7 @@ export const VariableMemoryBox: React.FC = () => {
                     background: 'rgba(255,255,255,0.08)',
                     padding: '2px 5px',
                     borderRadius: '4px',
+                    flexShrink: 0,
                   }}
                 >
                   {v.type}
@@ -94,11 +108,16 @@ export const VariableMemoryBox: React.FC = () => {
               <div 
                 style={{ 
                   fontFamily: 'var(--font-code)', 
-                  fontSize: '16px', 
+                  fontSize: typeof v.value === 'string' && String(v.value).length > 10 ? '13px' : '15px', 
                   fontWeight: 800, 
-                  marginTop: '8px',
+                  marginTop: '6px',
                   color: 'var(--text-primary)',
-                  wordBreak: 'break-all',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  lineHeight: 1.25,
+                  minHeight: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               >
                 {String(v.value)}
@@ -124,13 +143,14 @@ export const VariableMemoryBox: React.FC = () => {
         <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
           Change Value of <code style={{ color: activeVar.color }}>{activeVar.name}</code> ({activeVar.type}):
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <input
             type="text"
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             style={{
               flex: 1,
+              minWidth: 0,
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-medium)',
               borderRadius: '8px',
@@ -138,11 +158,20 @@ export const VariableMemoryBox: React.FC = () => {
               padding: '8px 12px',
               fontFamily: 'var(--font-code)',
               fontSize: '14px',
+              outline: 'none',
             }}
           />
           <button 
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary"
             onClick={updateActiveValue}
+            style={{
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              minHeight: '38px',
+              padding: '6px 14px',
+              fontSize: '12px',
+              fontWeight: 800,
+            }}
           >
             Assign =
           </button>

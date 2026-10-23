@@ -16,45 +16,47 @@ export const VisualLabView: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div 
         className="card"
         style={{
           background: 'linear-gradient(135deg, rgba(0, 230, 118, 0.15), rgba(10, 31, 20, 0.95))',
           border: '1px solid var(--border-bright)',
+          marginBottom: '2px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div 
             style={{ 
-              width: 38, 
-              height: 38, 
+              width: 36, 
+              height: 36, 
               borderRadius: 10, 
               background: 'rgba(0, 230, 118, 0.2)', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               color: 'var(--accent-green)',
+              flexShrink: 0,
             }}
           >
-            <Cpu size={22} />
+            <Cpu size={20} />
           </div>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '18px', fontWeight: 800 }}>
+            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '17px', fontWeight: 800 }}>
               Interactive Visual Lab
             </h1>
-            <div style={{ fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 600 }}>
+            <div style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 600 }}>
               See AI & Code In Action Before Any Math
             </div>
           </div>
         </div>
-        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>
           Play with interactive widgets designed for complete beginners on mobile. Touch, slide, and mutate data live.
         </p>
       </div>
 
       {/* Widget Tabs */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <div className="lesson-chip-bar" style={{ marginBottom: '4px' }}>
         {widgets.map((w) => {
           const Icon = w.icon;
           const isSelected = activeWidget === w.id;
@@ -62,25 +64,19 @@ export const VisualLabView: React.FC = () => {
             <button
               key={w.id}
               onClick={() => setActiveWidget(w.id as any)}
+              className="lesson-chip-btn"
               style={{
-                flexShrink: 0,
                 background: isSelected ? 'var(--accent-green)' : 'var(--bg-surface)',
                 color: isSelected ? '#0A2619' : 'var(--text-secondary)',
-                border: isSelected ? '1px solid var(--accent-green)' : '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-pill)',
-                padding: '8px 14px',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'var(--transition-fast)',
+                borderColor: isSelected ? 'var(--accent-green)' : 'var(--border-subtle)',
+                padding: '6px 12px',
+                fontSize: '11px',
+                whiteSpace: 'nowrap',
               }}
             >
               <Icon size={14} />
               <span>{w.name}</span>
-              <span style={{ fontSize: '10px', opacity: 0.7 }}>({w.itf})</span>
+              <span style={{ fontSize: '10px', opacity: 0.75 }}>({w.itf})</span>
             </button>
           );
         })}
