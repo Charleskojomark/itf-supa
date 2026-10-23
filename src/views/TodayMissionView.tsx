@@ -47,11 +47,11 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* 20/80 Practical Ratio Compliance Card */}
       <div className="ratio-compliance-card">
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: 4 }}>
             <span className="ratio-label">ITF 20/80 SUPA Rule</span>
             <span className="ratio-value-badge">
               {practicalRatioPercent}% Practical / {100 - practicalRatioPercent}% Theory
@@ -70,28 +70,20 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
       </div>
 
       {/* Lesson Selector Chip Bar (Week 1 / Week 2 Lessons) */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <div className="lesson-chip-bar">
         {SEED_LESSONS.map((l) => (
           <button
             key={l.id}
             onClick={() => setActiveLesson(l)}
+            className="lesson-chip-btn"
             style={{
-              flexShrink: 0,
               background: activeLesson.id === l.id ? 'var(--accent-green)' : 'var(--bg-surface)',
               color: activeLesson.id === l.id ? '#0A2619' : 'var(--text-secondary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-pill)',
-              padding: '6px 14px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
+              borderColor: activeLesson.id === l.id ? 'var(--accent-green)' : 'var(--border-subtle)',
             }}
           >
-            <span>W{l.weekNumber}D{l.dayNumber}</span>
-            <span>{l.title.split(':')[0]}</span>
+            <span className="lesson-chip-badge">W{l.weekNumber}D{l.dayNumber}</span>
+            <span className="lesson-chip-title">{l.title.split(':')[0]}</span>
           </button>
         ))}
       </div>
@@ -104,10 +96,12 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
           border: '1px solid var(--border-bright)',
           position: 'relative',
           overflow: 'hidden',
+          padding: '14px',
+          marginBottom: '10px',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             <span 
               style={{ 
                 background: 'rgba(255, 158, 27, 0.2)', 
@@ -115,7 +109,8 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
                 fontSize: '11px', 
                 fontWeight: 700, 
                 padding: '2px 8px', 
-                borderRadius: 'var(--radius-pill)' 
+                borderRadius: 'var(--radius-pill)',
+                whiteSpace: 'nowrap'
               }}
             >
               Zone {activeLesson.weekNumber}: {activeLesson.zoneName}
@@ -127,7 +122,8 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
                 fontSize: '11px', 
                 fontWeight: 700, 
                 padding: '2px 8px', 
-                borderRadius: 'var(--radius-pill)' 
+                borderRadius: 'var(--radius-pill)',
+                whiteSpace: 'nowrap'
               }}
             >
               Day {activeLesson.dayNumber} of 5
@@ -135,7 +131,7 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
           </div>
 
           {/* Audio Narrator & Plain English Toggles */}
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <button
               onClick={() => {
                 if (isSpeaking) {
@@ -149,13 +145,15 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
                 color: isSpeaking ? '#0A2619' : 'var(--text-secondary)',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '6px',
+                padding: '5px',
                 cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
               }}
               aria-label="Listen to narration"
               title="Narrate with browser Text-to-Speech (free, offline)"
             >
-              {isSpeaking ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              {isSpeaking ? <VolumeX size={15} /> : <Volume2 size={15} />}
             </button>
 
             <button
@@ -169,10 +167,11 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
                 fontSize: '11px',
                 fontWeight: 700,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
               title="Toggle simplified Nigerian plain-English mode"
             >
-              {readSimply ? '⚡ Plain Mode: ON' : 'Read Simply'}
+              {readSimply ? '⚡ Plain ON' : 'Read Simply'}
             </button>
           </div>
         </div>
@@ -180,9 +179,9 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
         <h1 
           style={{ 
             fontFamily: 'var(--font-heading)', 
-            fontSize: '20px', 
+            fontSize: 'clamp(16px, 4.2vw, 19px)', 
             fontWeight: 800, 
-            marginTop: '10px',
+            marginTop: '8px',
             lineHeight: 1.25,
             color: 'var(--text-primary)'
           }}
@@ -190,20 +189,20 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
           {activeLesson.title}
         </h1>
 
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
           {activeLesson.subtitle}
         </p>
 
         {/* Criteria Tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px', alignItems: 'center' }}>
           {activeLesson.criteriaCodes.map((code) => (
             <span 
               key={code}
               style={{
-                fontSize: '11px',
+                fontSize: '10px',
                 background: 'rgba(255, 255, 255, 0.08)',
                 border: '1px solid var(--border-subtle)',
-                padding: '2px 8px',
+                padding: '2px 6px',
                 borderRadius: '4px',
                 color: 'var(--text-secondary)',
                 fontFamily: 'var(--font-code)',
@@ -231,9 +230,9 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
         <button 
           className="btn btn-primary pulse-target"
           onClick={onStartLesson}
-          style={{ width: '100%', marginTop: '16px', gap: '10px' }}
+          style={{ width: '100%', marginTop: '12px', gap: '8px', minHeight: '44px', fontSize: '14px' }}
         >
-          <Play size={18} fill="currentColor" />
+          <Play size={16} fill="currentColor" />
           {currentLessonProgress?.completed ? 'Review Lesson (7/7 Passed)' : `Continue Step ${activeStepNumber} of 7`}
         </button>
       </div>
