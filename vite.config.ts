@@ -1,10 +1,70 @@
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+function devApiPlugin(): Plugin {
+  return {
+    name: 'dev-api-middleware',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url && req.url.startsWith('/api/')) {
+          const url = new URL(req.url, 'http://localhost');
+          let handlerModule: any;
+          if (url.pathname === '/api/auth/register') {
+            handlerModule = await server.ssrLoadModule('./api/auth/register.ts');
+          } else if (url.pathname === '/api/auth/login') {
+            handlerModule = await server.ssrLoadModule('./api/auth/login.ts');
+          } else if (url.pathname === '/api/auth/verify-pin') {
+            handlerModule = await server.ssrLoadModule('./api/auth/verify-pin.ts');
+          } else if (url.pathname === '/api/students') {
+            handlerModule = await server.ssrLoadModule('./api/students/index.ts');
+          } else if (url.pathname === '/api/students/sync') {
+            handlerModule = await server.ssrLoadModule('./api/students/sync.ts');
+          }
+
+          if (handlerModule && handlerModule.default) {
+            let body: any = {};
+            if (req.method === 'POST') {
+              const buffers: any[] = [];
+              for await (const chunk of req) {
+                buffers.push(chunk);
+              }
+              const raw = Buffer.concat(buffers).toString();
+              try {
+                body = JSON.parse(raw);
+              } catch (e) {
+                body = {};
+              }
+            }
+            (req as any).body = body;
+            (res as any).status = (code: number) => {
+              res.statusCode = code;
+              return res;
+            };
+            (res as any).json = (data: any) => {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(data));
+              return res;
+            };
+            try {
+              return await handlerModule.default(req, res);
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({ error: err.message }));
+            }
+          }
+        }
+        next();
+      });
+    }
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    devApiPlugin(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',

@@ -14,10 +14,17 @@ import { TutorDashboardView } from './views/TutorDashboardView';
 import { LessonPlayer } from './components/LessonPlayer';
 import { RoleGuard } from './components/RoleGuard';
 import { RoleAuthModal } from './components/RoleAuthModal';
+import { StudentAuthModal } from './components/StudentAuthModal';
 import type { Zone } from './data/zones';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, setActiveTab } = useApp();
+  const { 
+    activeTab, 
+    setActiveTab, 
+    isStudentAuthModalOpen, 
+    closeStudentAuthModal, 
+    studentAuthMode 
+  } = useApp();
   const [isPlayingLesson, setIsPlayingLesson] = useState<boolean>(false);
 
   const handleSelectZone = (zone: Zone) => {
@@ -31,6 +38,11 @@ const MainAppContent: React.FC = () => {
       <ErgonomicReminder />
       <NDPAConsentModal />
       <RoleAuthModal />
+      <StudentAuthModal 
+        isOpen={isStudentAuthModalOpen} 
+        onClose={closeStudentAuthModal} 
+        defaultMode={studentAuthMode} 
+      />
 
       <main className="main-content">
         {isPlayingLesson ? (

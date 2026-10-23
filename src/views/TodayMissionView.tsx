@@ -20,6 +20,8 @@ import { SEED_LESSONS } from '../data/lessons';
 
 export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onStartLesson }) => {
   const { 
+    profile,
+    openStudentAuthModal,
     activeLesson, 
     setActiveLesson,
     activeStepNumber, 
@@ -68,6 +70,39 @@ export const TodayMissionView: React.FC<{ onStartLesson: () => void }> = ({ onSt
           </div>
         </div>
       </div>
+
+      {/* Account Requirement Banner */}
+      {!profile?.phoneNumber && (
+        <div 
+          style={{
+            background: 'linear-gradient(135deg, rgba(0, 230, 118, 0.12), rgba(15, 25, 20, 0.95))',
+            border: '1px solid rgba(0, 230, 118, 0.4)',
+            borderRadius: '10px',
+            padding: '12px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🇳🇬 Student Account Required for SUPA Tracking</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              Create your account with your phone number so your daily progress is saved to the national database for tutors and assessors.
+            </div>
+          </div>
+          <button 
+            className="btn btn-primary btn-sm"
+            onClick={() => openStudentAuthModal('register')}
+            style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '6px 12px' }}
+          >
+            Create Student Account
+          </button>
+        </div>
+      )}
 
       {/* Lesson Selector Chip Bar (Week 1 / Week 2 Lessons) */}
       <div className="lesson-chip-bar">

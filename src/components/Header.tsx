@@ -11,7 +11,9 @@ import {
   Award,
   Sparkles,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  UserPlus,
+  UserCheck
 } from 'lucide-react';
 import { ROLE_CONFIGS } from '../types/rbac';
 
@@ -21,6 +23,7 @@ export const Header: React.FC = () => {
     role, 
     currentUser,
     openAuthModal, 
+    openStudentAuthModal,
     isOnline, 
     theme, 
     toggleTheme, 
@@ -53,6 +56,42 @@ export const Header: React.FC = () => {
             {isOnline ? <Wifi size={12} /> : <WifiOff size={12} />}
             <span className="network-label">{isOnline ? 'LIVE' : 'OFFLINE'}</span>
           </div>
+
+          {/* Student Account Status / Registration Pill */}
+          {role === 'learner' && (
+            profile?.phoneNumber ? (
+              <button 
+                className="stat-chip"
+                onClick={() => openStudentAuthModal('login')}
+                title={`Logged in as ${profile.fullName || 'Cadet'}. Click to switch or sync.`}
+                style={{
+                  cursor: 'pointer',
+                  borderColor: 'rgba(0, 230, 118, 0.4)',
+                  color: 'var(--accent-green)',
+                  background: 'transparent',
+                }}
+              >
+                <UserCheck size={12} />
+                <span>{profile.fullName?.split(' ')[0] || 'Cadet'}</span>
+              </button>
+            ) : (
+              <button 
+                className="stat-chip"
+                onClick={() => openStudentAuthModal('register')}
+                title="Create an account so your SUPA progress can be tracked by tutors & assessors"
+                style={{
+                  cursor: 'pointer',
+                  background: 'rgba(0, 230, 118, 0.12)',
+                  borderColor: 'var(--accent-green)',
+                  color: 'var(--accent-green)',
+                  fontWeight: 700,
+                }}
+              >
+                <UserPlus size={12} />
+                <span>Register</span>
+              </button>
+            )
+          )}
 
           {/* XP Chip (only relevant for learner / cadet) */}
           {role === 'learner' ? (

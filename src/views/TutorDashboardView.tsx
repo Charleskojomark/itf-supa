@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   BarChart3, 
@@ -7,13 +7,51 @@ import {
   Calendar, 
   Send, 
   CheckCircle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Search,
+  RefreshCw,
+  Award,
+  Clock,
+  Sparkles,
+  Flame,
+  Phone,
+  Mail
 } from 'lucide-react';
 import { BATCH_SQUADS } from '../data/squads';
+import { fetchAllStudentsFromCloud, type CloudStudent } from '../services/cloudDb';
 
 export const TutorDashboardView: React.FC = () => {
   const [announcement, setAnnouncement] = useState<string>('');
   const [announcementSent, setAnnouncementSent] = useState<boolean>(false);
+  const [students, setStudents] = useState<CloudStudent[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(true);
+  const [studentSearch, setStudentSearch] = useState<string>('');
+  const [selectedSquadFilter, setSelectedSquadFilter] = useState<string>('all');
+
+  const loadStudents = async () => {
+    setIsLoadingStudents(true);
+    try {
+      const data = await fetchAllStudentsFromCloud();
+      setStudents(data);
+    } catch (err) {
+      console.error('Failed to load students:', err);
+    } finally {
+      setIsLoadingStudents(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStudents();
+  }, []);
+
+  const filteredStudents = students.filter((s) => {
+    const matchesSearch = 
+      s.fullName.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      s.phoneNumber.includes(studentSearch) ||
+      (s.email && s.email.toLowerCase().includes(studentSearch.toLowerCase()));
+    const matchesSquad = selectedSquadFilter === 'all' || s.squadId === selectedSquadFilter;
+    return matchesSearch && matchesSquad;
+  });
 
   const stuckAlerts = [
     { id: '1', student: 'Tunde Bakare', squad: 'Eko AI Transformers', lesson: 'W02D03 Conditionals', step: 'Step 5: Break It (WAEC Grade Overlap Bug)', time: '18m ago' },
@@ -63,7 +101,7 @@ export const TutorDashboardView: React.FC = () => {
               Batch 30 Cohort Oversight
             </h1>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              ITF SUPA AI Specialist • 30 Learners Enrolled
+              ITF SUPA AI Specialist • {students.length} Learners Enrolled in Database
             </div>
           </div>
           <BarChart3 size={26} color="var(--accent-green)" />
@@ -72,18 +110,181 @@ export const TutorDashboardView: React.FC = () => {
         {/* Quick Batch Metrics */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '12px' }}>
           <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>On Schedule</div>
-            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-green)' }}>24 / 30</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Registered</div>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-green)' }}>{students.length}</div>
           </div>
           <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Need Help</div>
-            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-gold)' }}>4</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>20/80 Compliant</div>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+              {students.filter(s => s.practicalRatioPercent >= 80).length}
+            </div>
           </div>
           <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Inactive (48h+)</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Stuck Queue</div>
             <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-crimson)' }}>2</div>
           </div>
         </div>
+      </div>
+
+      {/* Live Registered Students Directory (Postgres Connected) */}
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Users size={16} color="var(--accent-green)" />
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '15px', fontWeight: 700 }}>
+              Registered Students ({filteredStudents.length})
+            </h2>
+          </div>
+          <button
+            onClick={loadStudents}
+            disabled={isLoadingStudents}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '6px',
+              padding: '4px 8px',
+              color: 'var(--text-secondary)',
+              fontSize: '11px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <RefreshCw size={12} className={isLoadingStudents ? 'spin' : ''} />
+            Refresh DB
+          </button>
+        </div>
+
+        {/* Search & Squad Filter */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <input
+              type="text"
+              placeholder="Search by student name or phone..."
+              value={studentSearch}
+              onChange={(e) => setStudentSearch(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '8px',
+                padding: '6px 10px 6px 30px',
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                outline: 'none',
+              }}
+            />
+            <Search size={14} style={{ position: 'absolute', left: 9, top: 9, color: 'var(--text-muted)' }} />
+          </div>
+
+          <select
+            value={selectedSquadFilter}
+            onChange={(e) => setSelectedSquadFilter(e.target.value)}
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '8px',
+              padding: '6px 8px',
+              fontSize: '11px',
+              color: 'var(--text-primary)',
+              outline: 'none',
+            }}
+          >
+            <option value="all">All Squads</option>
+            {BATCH_SQUADS.map((sq) => (
+              <option key={sq.id} value={sq.id}>{sq.name.split(' ')[0]}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Students List */}
+        {isLoadingStudents ? (
+          <div style={{ textAlign: 'center', padding: '20px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            Loading students from Postgres database...
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '20px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            No registered students match this search.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {filteredStudents.map((s) => (
+              <div 
+                key={s.id}
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div 
+                      style={{ 
+                        width: 38, 
+                        height: 38, 
+                        borderRadius: '50%', 
+                        background: 'rgba(0, 230, 118, 0.15)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        border: '1px solid var(--border-medium)',
+                        flexShrink: 0
+                      }}
+                    >
+                      {s.avatar || '👨🏾‍💻'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {s.fullName}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span><Phone size={10} style={{ display: 'inline', marginRight: 2 }} />{s.phoneNumber}</span>
+                        {s.email && <span><Mail size={10} style={{ display: 'inline', marginRight: 2 }} />{s.email.split('@')[0]}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span 
+                    style={{ 
+                      fontSize: '10px', 
+                      background: s.practicalRatioPercent >= 80 ? 'rgba(0, 230, 118, 0.2)' : 'rgba(255, 158, 27, 0.2)',
+                      color: s.practicalRatioPercent >= 80 ? 'var(--accent-green)' : 'var(--accent-gold)',
+                      padding: '2px 6px',
+                      borderRadius: 'var(--radius-pill)',
+                      fontWeight: 800,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {s.practicalRatioPercent}% Practical
+                  </span>
+                </div>
+
+                {/* Badges / Metrics Row */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '11px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                  <span style={{ color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Sparkles size={11} /> {s.xp} XP
+                  </span>
+                  <span style={{ color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Flame size={11} /> {s.streakDays}d Streak
+                  </span>
+                  <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Clock size={11} /> {s.totalPracticalMinutes}m Hands-on
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                    Zone {s.currentZone} • {s.criteriaCount} Standards
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Real-time Stuck Alert Feed */}

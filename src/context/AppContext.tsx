@@ -20,11 +20,13 @@ import { NAIJA_ZONES, type Zone } from '../data/zones';
 
 import { ROLE_CONFIGS, type AppUser } from '../types/rbac';
 import { SYSTEM_USERS } from '../data/mockUsers';
+import { syncStudentProgressToCloud } from '../services/cloudDb';
 
 export type ActiveTab = 'today' | 'zones' | 'lab' | 'squad' | 'portfolio' | 'assessor_matrix' | 'tutor_dash';
 
 interface AppContextType {
   profile: LearnerProfile | null;
+  setProfile: (profile: LearnerProfile | null) => void;
   role: UserRole;
   currentUser: AppUser;
   setRole: (role: UserRole) => void;
@@ -33,6 +35,10 @@ interface AppContextType {
   targetAuthRole: UserRole | null;
   openAuthModal: (role?: UserRole) => void;
   closeAuthModal: () => void;
+  isStudentAuthModalOpen: boolean;
+  studentAuthMode: 'register' | 'login';
+  openStudentAuthModal: (mode?: 'register' | 'login') => void;
+  closeStudentAuthModal: () => void;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   isOnline: boolean;
@@ -72,6 +78,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [role, setRoleState] = useState<UserRole>('learner');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [targetAuthRole, setTargetAuthRole] = useState<UserRole | null>(null);
+  const [isStudentAuthModalOpen, setIsStudentAuthModalOpen] = useState<boolean>(false);
+  const [studentAuthMode, setStudentAuthMode] = useState<'register' | 'login'>('register');
   const [activeTab, setActiveTabState] = useState<ActiveTab>('today');
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -97,6 +105,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closeAuthModal = () => {
     setIsAuthModalOpen(false);
     setTargetAuthRole(null);
+  };
+
+  const openStudentAuthModal = (mode: 'register' | 'login' = 'register') => {
+    setStudentAuthMode(mode);
+    setIsStudentAuthModalOpen(true);
+  };
+
+  const closeStudentAuthModal = () => {
+    setIsStudentAuthModalOpen(false);
   };
 
   const setRoleWithAuth = (newRole: UserRole) => {
@@ -164,6 +181,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const theoryMins = isPractical ? 0 : Math.ceil(timeSpent / 60);
     const practicalMins = isPractical ? Math.ceil(timeSpent / 60) : 0;
     await logSessionTime(profile.id, theoryMins, practicalMins);
+
+    // Sync to PostgreSQL cloud database on Supabase so instructors and assessors see real-time progress
+    const totalSecs = (updatedProfile.totalPracticalSeconds || 0) + (updatedProfile.totalTheorySeconds || 0);
+    const ratio = totalSecs > 0 ? Math.round(((updatedProfile.totalPracticalSeconds || 0) / totalSecs) * 100) : 80;
+    syncStudentProgressToCloud({
+      userId: updatedProfile.id,
+      xp: updatedProfile.xp,
+      currentZone: updatedProfile.currentZone,
+      streakDays: updatedProfile.streakDays,
+      totalPracticalSeconds: updatedProfile.totalPracticalSeconds,
+      totalTheorySeconds: updatedProfile.totalTheorySeconds,
+      practicalRatioPercent: ratio,
+      lastLessonId: activeLesson.id,
+    });
   };
 
   const useGraceToken = async (): Promise<boolean> => {
@@ -312,6 +343,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         profile,
+        setProfile,
         role,
         currentUser,
         setRole,
@@ -320,6 +352,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         targetAuthRole,
         openAuthModal,
         closeAuthModal,
+        isStudentAuthModalOpen,
+        studentAuthMode,
+        openStudentAuthModal,
+        closeStudentAuthModal,
         activeTab,
         setActiveTab,
         isOnline,

@@ -8,16 +8,47 @@ import {
   Clock, 
   AlertCircle, 
   Filter,
-  CheckCheck
+  CheckCheck,
+  Users
 } from 'lucide-react';
 import { ITF_CRITERIA_LIST } from '../data/criteria';
 import { jsPDF } from 'jspdf';
+import { fetchAllStudentsFromCloud, type CloudStudent } from '../services/cloudDb';
 
 export const AssessorMatrixView: React.FC = () => {
   const { profile, practicalRatioPercent } = useApp();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterDomain, setFilterDomain] = useState<string>('all');
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [students, setStudents] = useState<CloudStudent[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+    fetchAllStudentsFromCloud()
+      .then((data) => {
+        if (!mounted) return;
+        setStudents(data);
+        if (data.length > 0) {
+          setSelectedStudentId(data[0].id);
+        }
+      })
+      .finally(() => {
+        if (mounted) setIsLoadingStudents(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const activeCandidate = students.find((s) => s.id === selectedStudentId) || null;
+  const candidateName = activeCandidate ? activeCandidate.fullName : (profile?.fullName || 'Chidi Okonkwo');
+  const candidatePhone = activeCandidate ? activeCandidate.phoneNumber : (profile?.phoneNumber || '+234 803 123 4567');
+  const candidateXp = activeCandidate ? activeCandidate.xp : (profile?.xp || 120);
+  const candidateStreak = activeCandidate ? activeCandidate.streakDays : (profile?.streakDays || 4);
+  const candidateRatio = activeCandidate ? activeCandidate.practicalRatioPercent : practicalRatioPercent;
+  const candidateSquad = activeCandidate?.squadId || profile?.squadId || 'squad-eko-01';
 
   // Filter criteria
   const filtered = ITF_CRITERIA_LIST.filter((item) => {
@@ -62,13 +93,13 @@ export const AssessorMatrixView: React.FC = () => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.setTextColor(10, 38, 25);
-      doc.text(`Candidate: ${profile?.fullName || 'Chidi Okonkwo'} (${profile?.phoneNumber || '+234 803 123 4567'})`, 18, 48);
+      doc.text(`Candidate: ${candidateName} (${candidatePhone})`, 18, 48);
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Batch ID: ITF-SUPA-B26-03 | Squad: Eko AI Transformers (Zone 1-15)`, 18, 55);
-      doc.text(`Cumulative XP: ${profile?.xp || 120} | Streak: ${profile?.streakDays || 4} Days | Grace Tokens Used: 0`, 18, 62);
-      doc.text(`SUPA Ratio Audit: ${practicalRatioPercent}% Practical / ${100 - practicalRatioPercent}% Theory (PASS: >= 80% Rule Met)`, 18, 69);
+      doc.text(`Batch ID: ITF-SUPA-B26-03 | Squad: ${candidateSquad}`, 18, 55);
+      doc.text(`Cumulative XP: ${candidateXp} | Streak: ${candidateStreak} Days | Grace Tokens Used: 0`, 18, 62);
+      doc.text(`SUPA Ratio Audit: ${candidateRatio}% Practical / ${100 - candidateRatio}% Theory (PASS: >= 80% Rule Met)`, 18, 69);
 
       // Competency Matrix Table Header
       let y = 86;
@@ -123,7 +154,7 @@ export const AssessorMatrixView: React.FC = () => {
       doc.text('ITF SUPA Lead Assessor Signature', 14, y + 5);
       doc.text('Date & Official Stamp', 110, y + 5);
 
-      doc.save(`SUPA_Level3_Evidence_Pack_${profile?.id || 'Chidi'}.pdf`);
+      doc.save(`SUPA_Level3_Evidence_Pack_${candidateName.replace(/\s+/g, '_')}.pdf`);
     } catch (e) {
       console.error(e);
       alert('PDF generation failed. Please try again.');
@@ -166,6 +197,56 @@ export const AssessorMatrixView: React.FC = () => {
           <Award size={26} color="var(--accent-gold)" />
         </div>
 
+        {/* Candidate Selector (Connected to Postgres Live Database) */}
+        <div 
+          style={{
+            marginTop: '14px',
+            background: 'rgba(0, 0, 0, 0.4)',
+            padding: '12px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255, 158, 27, 0.3)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)' }}>
+              <Users size={14} />
+              <span>Auditing Candidate Profile (Postgres Live DB)</span>
+            </div>
+            {isLoadingStudents ? (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Querying DB...</span>
+            ) : (
+              <span style={{ fontSize: '11px', color: 'var(--accent-green)' }}>● {students.length} Learners Tracked</span>
+            )}
+          </div>
+
+          <select
+            value={selectedStudentId}
+            onChange={(e) => setSelectedStudentId(e.target.value)}
+            style={{
+              width: '100%',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-primary)',
+              padding: '8px 10px',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: 600,
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {students.length === 0 ? (
+              <option value="">{profile?.fullName || 'Chidi Okonkwo'} (Local Profile)</option>
+            ) : (
+              students.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.avatar || '👤'} {st.fullName} — {st.squadId} ({st.xp} XP, Zone {st.currentZone})
+                </option>
+              ))
+            )}
+          </select>
+        </div>
+
         {/* 20/80 Practical Ratio Check */}
         <div 
           style={{
@@ -180,9 +261,9 @@ export const AssessorMatrixView: React.FC = () => {
           }}
         >
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Verified Time Ratio:</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Candidate Time Ratio ({candidateName.split(' ')[0]}):</div>
             <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-green)' }}>
-              {practicalRatioPercent}% Practical / {100 - practicalRatioPercent}% Theory
+              {candidateRatio}% Practical / {100 - candidateRatio}% Theory
             </div>
           </div>
           <span 

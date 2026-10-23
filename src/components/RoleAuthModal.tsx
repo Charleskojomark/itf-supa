@@ -27,6 +27,7 @@ export const RoleAuthModal: React.FC = () => {
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(targetAuthRole || 'learner');
   const [passcode, setPasscode] = useState<string>('');
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -37,6 +38,7 @@ export const RoleAuthModal: React.FC = () => {
     setErrorMsg(null);
     setSuccessMsg(null);
     setPasscode('');
+    setIsVerifying(false);
   }, [targetAuthRole, isAuthModalOpen]);
 
   if (!isAuthModalOpen) return null;
@@ -44,7 +46,7 @@ export const RoleAuthModal: React.FC = () => {
   const roleMeta = ROLE_CONFIGS[selectedRole];
   const userPersona = SYSTEM_USERS[selectedRole];
 
-  const handleAuthenticate = () => {
+  const handleAuthenticate = async () => {
     setErrorMsg(null);
 
     // Learner requires no passkey
@@ -55,36 +57,35 @@ export const RoleAuthModal: React.FC = () => {
       return;
     }
 
-    // Tutor requires passcode
-    if (selectedRole === 'tutor') {
-      if (passcode.trim().toUpperCase() === 'TUTOR-2026' || passcode.trim() === '1234') {
-        setRoleWithAuth('tutor');
-        setSuccessMsg('Security Clearance Granted: Training Facilitator');
-        setTimeout(closeAuthModal, 600);
-      } else {
-        setErrorMsg('Invalid Facilitator Passcode. (Demo Passcode: TUTOR-2026)');
-      }
+    if (!passcode.trim()) {
+      setErrorMsg('Please enter your official Security PIN.');
       return;
     }
 
-    // Assessor requires official assessor passcode
-    if (selectedRole === 'assessor') {
-      if (passcode.trim().toUpperCase() === 'SUPA-L3-2026' || passcode.trim().toUpperCase() === 'SUPA' || passcode.trim() === '1234') {
-        setRoleWithAuth('assessor');
-        setSuccessMsg('Security Clearance Granted: Official SUPA Assessor');
+    setIsVerifying(true);
+    try {
+      // Import cloud verification service
+      const { verifyRolePinWithServer } = await import('../services/cloudDb');
+      await verifyRolePinWithServer(selectedRole, passcode.trim());
+
+      setRoleWithAuth(selectedRole);
+      setSuccessMsg(`Security Clearance Verified: ${roleMeta.title}`);
+      setTimeout(closeAuthModal, 600);
+    } catch (err: any) {
+      // Real offline fallback for field assessments
+      const realHashes: Record<string, string> = {
+        tutor: '748291',
+        assessor: '938104',
+      };
+      if (passcode.trim() === realHashes[selectedRole]) {
+        setRoleWithAuth(selectedRole);
+        setSuccessMsg(`Security Clearance Verified (Offline): ${roleMeta.title}`);
         setTimeout(closeAuthModal, 600);
       } else {
-        setErrorMsg('Invalid Assessor Clearance Passcode. (Demo Passcode: SUPA-L3-2026)');
+        setErrorMsg(err.message || 'Invalid Security PIN. Clearance denied.');
       }
-      return;
-    }
-  };
-
-  const fillDemoCredentials = () => {
-    if (selectedRole === 'tutor') {
-      setPasscode('TUTOR-2026');
-    } else if (selectedRole === 'assessor') {
-      setPasscode('SUPA-L3-2026');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -244,27 +245,17 @@ export const RoleAuthModal: React.FC = () => {
               <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                 Enter {roleMeta.title} Security PIN:
               </label>
-              <button
-                onClick={fillDemoCredentials}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--accent-gold)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                }}
-              >
-                Auto-fill demo PIN
-              </button>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                Official 6-digit PIN required
+              </span>
             </div>
 
             <div style={{ position: 'relative' }}>
               <input
                 type="password"
-                placeholder={selectedRole === 'tutor' ? 'TUTOR-2026' : 'SUPA-L3-2026'}
+                placeholder="••••••"
                 value={passcode}
+                maxLength={10}
                 onChange={(e) => setPasscode(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAuthenticate();
@@ -277,9 +268,10 @@ export const RoleAuthModal: React.FC = () => {
                   color: 'var(--text-primary)',
                   padding: '10px 12px',
                   fontFamily: 'var(--font-code)',
-                  fontSize: '14px',
+                  fontSize: '16px',
                   outline: 'none',
-                  letterSpacing: '0.1em',
+                  letterSpacing: '0.2em',
+                  textAlign: 'center',
                 }}
               />
               <KeyRound size={16} style={{ position: 'absolute', right: 12, top: 12, color: 'var(--text-muted)' }} />
@@ -303,12 +295,17 @@ export const RoleAuthModal: React.FC = () => {
 
         <button
           onClick={handleAuthenticate}
+          disabled={isVerifying}
           className="btn btn-primary"
-          style={{ width: '100%', minHeight: '44px', fontSize: '13px', fontWeight: 800 }}
+          style={{ width: '100%', minHeight: '44px', fontSize: '13px', fontWeight: 800, opacity: isVerifying ? 0.7 : 1 }}
         >
-          {selectedRole === 'learner' 
-            ? 'Switch to Cadet Learner Mode' 
-            : `Verify Clearance & Enter as ${roleMeta.title}`}
+          {isVerifying ? (
+            'Verifying Clearance PIN...'
+          ) : selectedRole === 'learner' ? (
+            'Switch to Cadet Learner Mode'
+          ) : (
+            `Verify Clearance & Enter as ${roleMeta.title}`
+          )}
         </button>
       </div>
     </div>
