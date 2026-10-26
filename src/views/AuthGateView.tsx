@@ -14,7 +14,9 @@ import {
   GraduationCap,
   Award,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { 
   registerStudentAccount, 
@@ -30,18 +32,21 @@ export const AuthGateView: React.FC = () => {
   // Student Login State
   const [loginPhone, setLoginPhone] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
+  const [showLoginPassword, setShowLoginPassword] = useState<boolean>(false);
 
   // Student Register State
   const [regFullName, setRegFullName] = useState<string>('');
   const [regPhone, setRegPhone] = useState<string>('');
   const [regEmail, setRegEmail] = useState<string>('');
   const [regPassword, setRegPassword] = useState<string>('');
+  const [showRegPassword, setShowRegPassword] = useState<boolean>(false);
   const [regSquadId, setRegSquadId] = useState<string>(BATCH_SQUADS[0]?.id || 'squad-eko-01');
   const [regAvatar, setRegAvatar] = useState<string>('👨🏾‍💻');
 
   // Staff Clearance State
   const [staffRole, setStaffRole] = useState<'tutor' | 'assessor'>('tutor');
   const [staffPin, setStaffPin] = useState<string>('');
+  const [showStaffPin, setShowStaffPin] = useState<boolean>(false);
 
   // Status
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -341,7 +346,7 @@ export const AuthGateView: React.FC = () => {
             </label>
             <div style={{ position: 'relative' }}>
               <input 
-                type="password"
+                type={showLoginPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
@@ -351,13 +356,33 @@ export const AuthGateView: React.FC = () => {
                   background: 'var(--bg-primary)',
                   border: '1px solid var(--border-medium)',
                   borderRadius: '8px',
-                  padding: '10px 12px 10px 36px',
+                  padding: '10px 42px 10px 36px',
                   color: 'var(--text-primary)',
                   fontSize: '13px',
                   outline: 'none',
                 }}
               />
               <Lock size={14} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+              <button
+                type="button"
+                onClick={() => setShowLoginPassword(!showLoginPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title={showLoginPassword ? 'Hide password' : 'Show password'}
+              >
+                {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
@@ -367,9 +392,42 @@ export const AuthGateView: React.FC = () => {
             className="btn btn-primary"
             style={{ width: '100%', padding: '12px', marginTop: '4px', gap: '8px', fontSize: '14px', fontWeight: 800 }}
           >
-            {isLoading ? 'Verifying Account...' : 'Sign In to Mission'}
+            {isLoading ? 'Verifying Account...' : 'Sign In to Dashboard'}
             <ArrowRight size={16} />
           </button>
+
+          {/* Quick Demo & Staff Credentials Helper */}
+          <div style={{ marginTop: '6px', background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '10px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>
+              ⚡ Quick Fill Accounts:
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => { setLoginPhone('08031112233'); setLoginPassword('TeacherPass2026!'); }}
+                style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-medium)', background: 'var(--bg-primary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                title="Fill Teacher Account (Engr. Bello)"
+              >
+                👨🏾‍🏫 Teacher
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginPhone('08035556677'); setLoginPassword('AssessorPass2026!'); }}
+                style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-medium)', background: 'var(--bg-primary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                title="Fill Assessor Account (Dr. Okafor)"
+              >
+                👨🏾‍💼 Assessor
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginPhone('08031234567'); setLoginPassword('CadetPass2026!'); }}
+                style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-medium)', background: 'var(--bg-primary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                title="Fill Cadet Account (Chidi)"
+              >
+                👨🏾‍💻 Cadet
+              </button>
+            </div>
+          </div>
 
           <div style={{ textAlign: 'center', marginTop: '4px' }}>
             <button
@@ -482,7 +540,7 @@ export const AuthGateView: React.FC = () => {
             </label>
             <div style={{ position: 'relative' }}>
               <input 
-                type="password"
+                type={showRegPassword ? "text" : "password"}
                 placeholder="At least 6 characters"
                 value={regPassword}
                 onChange={(e) => setRegPassword(e.target.value)}
@@ -492,13 +550,33 @@ export const AuthGateView: React.FC = () => {
                   background: 'var(--bg-primary)',
                   border: '1px solid var(--border-medium)',
                   borderRadius: '8px',
-                  padding: '10px 12px 10px 36px',
+                  padding: '10px 42px 10px 36px',
                   color: 'var(--text-primary)',
                   fontSize: '13px',
                   outline: 'none',
                 }}
               />
               <Lock size={14} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+              <button
+                type="button"
+                onClick={() => setShowRegPassword(!showRegPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title={showRegPassword ? 'Hide password' : 'Show password'}
+              >
+                {showRegPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
@@ -656,7 +734,7 @@ export const AuthGateView: React.FC = () => {
             </label>
             <div style={{ position: 'relative' }}>
               <input 
-                type="password"
+                type={showStaffPin ? "text" : "password"}
                 placeholder="Enter 6-digit security PIN"
                 value={staffPin}
                 onChange={(e) => setStaffPin(e.target.value)}
@@ -667,7 +745,7 @@ export const AuthGateView: React.FC = () => {
                   background: 'var(--bg-primary)',
                   border: '1px solid var(--accent-gold)',
                   borderRadius: '8px',
-                  padding: '10px 12px 10px 36px',
+                  padding: '10px 42px 10px 36px',
                   color: 'var(--text-primary)',
                   fontSize: '14px',
                   letterSpacing: '3px',
@@ -675,6 +753,26 @@ export const AuthGateView: React.FC = () => {
                 }}
               />
               <Lock size={14} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--accent-gold)' }} />
+              <button
+                type="button"
+                onClick={() => setShowStaffPin(!showStaffPin)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title={showStaffPin ? 'Hide PIN' : 'Show PIN'}
+              >
+                {showStaffPin ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
               * PIN is verified against the secure database. Demo auto-fill has been removed.

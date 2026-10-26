@@ -12,7 +12,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Phone number or email and password are required' });
   }
 
-  const cleanIdent = String(identifier).trim().replace(/\s+/g, '');
+  const rawIdent = String(identifier).trim();
+  const cleanIdent = rawIdent.replace(/\s+/g, '');
+  
+  let identWithPlus234 = cleanIdent;
+  let identWithZero = cleanIdent;
+
+  if (cleanIdent.startsWith('+234')) {
+    identWithZero = '0' + cleanIdent.substring(4);
+  } else if (cleanIdent.startsWith('234')) {
+    identWithPlus234 = '+' + cleanIdent;
+    identWithZero = '0' + cleanIdent.substring(3);
+  } else if (cleanIdent.startsWith('0')) {
+    identWithPlus234 = '+234' + cleanIdent.substring(1);
+  }
+
   const passwordHash = hashPin(password);
 
   try {
@@ -22,9 +36,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               p.total_practical_seconds, p.practical_ratio_percent, p.completed_criteria
        FROM public.users u
        LEFT JOIN public.student_progress p ON u.id = p.user_id
-       WHERE (u.phone_number = $1 OR LOWER(u.email) = LOWER($1))
-         AND u.password_hash = $2`,
-      [cleanIdent, passwordHash]
+       WHERE (
+         u.phone_number = $1 
+         OR u.phone_number = $2 
+         OR u.phone_number = $3
+         OR LOWER(u.email) = LOWER($1)
+         OR LOWER(u.email) = LOWER($2)
+       )
+       AND u.password_hash = $4`,
+      [cleanIdent, identWithZero, identWithPlus234, passwordHash]
     );
 
     if (userRes.rows.length === 0) {

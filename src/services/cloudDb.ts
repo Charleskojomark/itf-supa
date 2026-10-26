@@ -23,6 +23,18 @@ export interface CloudStudent {
   criteriaCount: number;
 }
 
+async function safeParseJson(res: Response): Promise<any> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+      throw new Error(`Server returned HTML instead of JSON (${res.status}). Please verify API endpoint configuration.`);
+    }
+    throw new Error(`Invalid server response: ${text.substring(0, 120)}`);
+  }
+}
+
 export async function registerStudentAccount(data: {
   fullName: string;
   phoneNumber: string;
@@ -36,7 +48,7 @@ export async function registerStudentAccount(data: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  const json = await res.json();
+  const json = await safeParseJson(res);
   if (!res.ok) {
     throw new Error(json.error || 'Failed to register account');
   }
@@ -49,7 +61,7 @@ export async function loginStudentAccount(identifier: string, password: string) 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier, password }),
   });
-  const json = await res.json();
+  const json = await safeParseJson(res);
   if (!res.ok) {
     throw new Error(json.error || 'Invalid credentials');
   }
@@ -62,7 +74,7 @@ export async function verifyRolePinWithServer(role: string, pin: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ role, pin }),
   });
-  const json = await res.json();
+  const json = await safeParseJson(res);
   if (!res.ok) {
     throw new Error(json.error || 'Security Clearance Denied');
   }

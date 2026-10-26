@@ -145,7 +145,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfile(newProfile);
     setRoleState(newProfile.role);
     setIsAuthenticated(true);
-    setActiveTabState('today');
+    const defaultTab = (ROLE_CONFIGS[newProfile.role]?.defaultTab as ActiveTab) || 'today';
+    setActiveTabState(defaultTab);
   };
 
   const logoutUser = () => {

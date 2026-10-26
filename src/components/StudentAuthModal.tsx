@@ -11,7 +11,9 @@ import {
   Users, 
   CheckCircle2, 
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { registerStudentAccount, loginStudentAccount } from '../services/cloudDb';
 import { BATCH_SQUADS } from '../data/squads';
@@ -33,6 +35,7 @@ export const StudentAuthModal: React.FC<StudentAuthModalProps> = ({
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [squadId, setSquadId] = useState<string>(BATCH_SQUADS[0]?.id || 'squad_eko');
   const [avatar, setAvatar] = useState<string>('👨🏾‍💻');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -397,7 +400,7 @@ export const StudentAuthModal: React.FC<StudentAuthModalProps> = ({
             </label>
             <div style={{ position: 'relative' }}>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 placeholder="••••••••"
                 value={password}
@@ -408,12 +411,32 @@ export const StudentAuthModal: React.FC<StudentAuthModalProps> = ({
                   border: '1px solid var(--border-medium)',
                   borderRadius: '8px',
                   color: 'var(--text-primary)',
-                  padding: '8px 12px 8px 32px',
+                  padding: '8px 42px 8px 32px',
                   fontSize: '13px',
                   outline: 'none',
                 }}
               />
               <Lock size={14} style={{ position: 'absolute', left: 10, top: 11, color: 'var(--text-muted)' }} />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 

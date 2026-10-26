@@ -9,7 +9,9 @@ import {
   GraduationCap, 
   Award,
   AlertCircle,
-  KeyRound
+  KeyRound,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { ROLE_CONFIGS } from '../types/rbac';
 import { SYSTEM_USERS } from '../data/mockUsers';
@@ -27,6 +29,7 @@ export const RoleAuthModal: React.FC = () => {
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(targetAuthRole || 'learner');
   const [passcode, setPasscode] = useState<string>('');
+  const [showPasscode, setShowPasscode] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -252,7 +255,7 @@ export const RoleAuthModal: React.FC = () => {
 
             <div style={{ position: 'relative' }}>
               <input
-                type="password"
+                type={showPasscode ? 'text' : 'password'}
                 placeholder="••••••"
                 value={passcode}
                 maxLength={10}
@@ -266,7 +269,7 @@ export const RoleAuthModal: React.FC = () => {
                   border: errorMsg ? '1px solid var(--accent-crimson)' : '1px solid var(--border-medium)',
                   borderRadius: '8px',
                   color: 'var(--text-primary)',
-                  padding: '10px 12px',
+                  padding: '10px 42px 10px 12px',
                   fontFamily: 'var(--font-code)',
                   fontSize: '16px',
                   outline: 'none',
@@ -274,7 +277,26 @@ export const RoleAuthModal: React.FC = () => {
                   textAlign: 'center',
                 }}
               />
-              <KeyRound size={16} style={{ position: 'absolute', right: 12, top: 12, color: 'var(--text-muted)' }} />
+              <button
+                type="button"
+                onClick={() => setShowPasscode(!showPasscode)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title={showPasscode ? 'Hide PIN' : 'Show PIN'}
+              >
+                {showPasscode ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
 
             {errorMsg && (
