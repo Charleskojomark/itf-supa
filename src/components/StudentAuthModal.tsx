@@ -29,7 +29,7 @@ export const StudentAuthModal: React.FC<StudentAuthModalProps> = ({
   onClose,
   defaultMode = 'register',
 }) => {
-  const { setProfile, profile } = useApp();
+  const { setProfile, profile, loginUser } = useApp();
   const [mode, setMode] = useState<'register' | 'login'>(defaultMode);
   const [fullName, setFullName] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
@@ -74,59 +74,12 @@ export const StudentAuthModal: React.FC<StudentAuthModalProps> = ({
           avatar,
         });
 
-        const newProfile: any = {
-          id: user.id,
-          fullName: user.fullName,
-          displayName: user.fullName.split(' ')[0],
-          phoneNumber: user.phoneNumber,
-          avatar: user.avatar,
-          squadId: user.squadId,
-          role: 'learner',
-          currentZone: user.currentZone || 1,
-          xp: user.xp || 50,
-          level: user.level || 1,
-          streakDays: user.streakDays || 1,
-          graceTokens: 3,
-          totalTheorySeconds: 0,
-          totalPracticalSeconds: 0,
-          ndpaConsent: { consented: true, timestamp: Date.now(), version: '1.0-2026' },
-          accessibility: { readSimply: false, voiceEnabled: false, highContrast: false, speechRate: 1.0 },
-          lastActive: Date.now(),
-        };
-
-        const { saveProfile } = await import('../services/db');
-        await saveProfile(newProfile);
-        setProfile(newProfile);
-
+        await loginUser(user);
         setSuccessMsg('Account created successfully! Enrolled in Batch 26-03.');
         setTimeout(onClose, 800);
       } else {
         const user = await loginStudentAccount(phoneNumber.trim(), password.trim());
-
-        const loggedInProfile: any = {
-          id: user.id,
-          fullName: user.fullName,
-          displayName: user.fullName.split(' ')[0],
-          phoneNumber: user.phoneNumber,
-          avatar: user.avatar,
-          squadId: user.squadId,
-          role: user.role || 'learner',
-          currentZone: user.currentZone || 1,
-          xp: user.xp || 0,
-          level: user.level || 1,
-          streakDays: user.streakDays || 1,
-          graceTokens: user.graceTokens || 3,
-          totalTheorySeconds: user.totalTheorySeconds || 0,
-          totalPracticalSeconds: user.totalPracticalSeconds || 0,
-          ndpaConsent: { consented: true, timestamp: Date.now(), version: '1.0-2026' },
-          accessibility: { readSimply: false, voiceEnabled: false, highContrast: false, speechRate: 1.0 },
-          lastActive: Date.now(),
-        };
-
-        const { saveProfile } = await import('../services/db');
-        await saveProfile(loggedInProfile);
-        setProfile(loggedInProfile);
-
+        await loginUser(user);
         setSuccessMsg(`Welcome back, ${user.fullName.split(' ')[0]}! Progress synced.`);
         setTimeout(onClose, 800);
       }

@@ -61,14 +61,20 @@ export const INITIAL_PROFILE: LearnerProfile = {
   lastActive: Date.now(),
 };
 
-// Ensure initial profile exists
-export async function getOrCreateCurrentProfile(): Promise<LearnerProfile> {
-  const existing = await db.profiles.get(DEFAULT_PROFILE_ID);
+// Ensure profile exists for the user
+export async function getOrCreateCurrentProfile(userId?: string): Promise<LearnerProfile> {
+  const targetId = userId || DEFAULT_PROFILE_ID;
+  const existing = await db.profiles.get(targetId);
   if (existing) {
     return existing;
   }
-  await db.profiles.put(INITIAL_PROFILE);
-  return INITIAL_PROFILE;
+  const newProfile: LearnerProfile = {
+    ...INITIAL_PROFILE,
+    id: targetId,
+    completedCriteria: [],
+  };
+  await db.profiles.put(newProfile);
+  return newProfile;
 }
 
 export async function saveProfile(profile: LearnerProfile): Promise<void> {
@@ -92,7 +98,8 @@ export async function saveStepProgress(
   score: number,
   answer?: any,
   codeSnapshot?: string,
-  explanationText?: string
+  explanationText?: string,
+  criteriaCodes?: string[]
 ): Promise<LessonProgress> {
   const compositeId = `${userId}_${lessonId}`;
   let progress = await db.lessonProgress.get(compositeId);
@@ -152,14 +159,14 @@ export async function saveStepProgress(
   // Check if all 7 steps are done
   const allSteps = ['hook', 'see_it', 'predict', 'try_it', 'break_it', 'explain_it', 'build_it'] as StepType[];
   const isAllComplete = allSteps.every((s) => progress!.stepProgress[s]?.completed);
-  if (isAllComplete) {
+  if (isAllComplete || stepType === 'build_it') {
     progress.completed = true;
   }
 
   progress.lastUpdated = Date.now();
   await db.lessonProgress.put(progress);
 
-  // Also update user's profile total time logs
+  // Also update user's profile total time logs, XP, and criteria
   const profile = await db.profiles.get(userId);
   if (profile) {
     if (isPractical) {
@@ -167,12 +174,35 @@ export async function saveStepProgress(
     } else {
       profile.totalTheorySeconds += timeSpentSec;
     }
-    profile.xp += score * 10;
+    profile.xp += (score || 10) * 10;
+    profile.level = Math.max(1, Math.floor(profile.xp / 100) + 1);
     profile.lastActive = Date.now();
+
+    // Award criteria if lesson completed or build_it finished
+    if (progress.completed) {
+      if (criteriaCodes && criteriaCodes.length > 0) {
+        const currentSet = new Set(profile.completedCriteria || []);
+        criteriaCodes.forEach(c => currentSet.add(c));
+        profile.completedCriteria = Array.from(currentSet);
+      }
+      // Unlock next zone when week completes
+      if (weekNumber >= profile.currentZone && profile.currentZone < 15) {
+        profile.currentZone = weekNumber + 1;
+      }
+    }
+
     await db.profiles.put(profile);
   }
 
   return progress;
+}
+
+export async function getUnsyncedProgress(userId: string): Promise<LessonProgress[]> {
+  return await db.lessonProgress.where('userId').equals(userId).and(p => !p.synced).toArray();
+}
+
+export async function markProgressSynced(id: string): Promise<void> {
+  await db.lessonProgress.update(id, { synced: true });
 }
 
 export async function getAllProgressForUser(userId: string): Promise<LessonProgress[]> {

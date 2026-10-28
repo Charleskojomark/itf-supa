@@ -31,6 +31,7 @@ export interface LearnerProfile {
     highContrast: boolean;
     speechRate: number;
   };
+  completedCriteria?: string[];
   lastActive: number;
 }
 

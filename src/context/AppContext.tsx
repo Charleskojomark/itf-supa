@@ -136,6 +136,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       graceTokens: user.graceTokens ?? 3,
       totalTheorySeconds: user.totalTheorySeconds || 0,
       totalPracticalSeconds: user.totalPracticalSeconds || 0,
+      completedCriteria: user.completedCriteria || [],
       ndpaConsent: { consented: true, timestamp: Date.now(), version: '1.0-2026' },
       accessibility: { readSimply: false, voiceEnabled: true, highContrast: false, speechRate: 1.0 },
       lastActive: Date.now(),
@@ -208,11 +209,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       score,
       answer,
       codeSnapshot,
-      explanationText
+      explanationText,
+      activeLesson.criteriaCodes
     );
 
     setCurrentLessonProgress(updatedProg);
-    const updatedProfile = await getOrCreateCurrentProfile();
+    const updatedProfile = await getOrCreateCurrentProfile(profile.id);
     setProfile(updatedProfile);
 
     // Auto-advance to next step if not step 7
@@ -228,7 +230,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Sync to PostgreSQL cloud database on Supabase so instructors and assessors see real-time progress
     const totalSecs = (updatedProfile.totalPracticalSeconds || 0) + (updatedProfile.totalTheorySeconds || 0);
     const ratio = totalSecs > 0 ? Math.round(((updatedProfile.totalPracticalSeconds || 0) / totalSecs) * 100) : 80;
-    syncStudentProgressToCloud({
+    const synced = await syncStudentProgressToCloud({
       userId: updatedProfile.id,
       xp: updatedProfile.xp,
       currentZone: updatedProfile.currentZone,
@@ -236,8 +238,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       totalPracticalSeconds: updatedProfile.totalPracticalSeconds,
       totalTheorySeconds: updatedProfile.totalTheorySeconds,
       practicalRatioPercent: ratio,
+      completedCriteria: updatedProfile.completedCriteria || [],
       lastLessonId: activeLesson.id,
     });
+
+    if (synced && updatedProg.id) {
+      const { markProgressSynced } = await import('../services/db');
+      await markProgressSynced(updatedProg.id);
+    }
   };
 
   const useGraceToken = async (): Promise<boolean> => {

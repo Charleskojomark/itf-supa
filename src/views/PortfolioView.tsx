@@ -18,8 +18,9 @@ export const PortfolioView: React.FC = () => {
   const { profile, practicalRatioPercent, exportData, role, currentUser } = useApp();
   const [isSignedOff, setIsSignedOff] = useState<boolean>(false);
 
+  const userCriteriaSet = new Set(profile?.completedCriteria || []);
   const completedCriteria = ITF_CRITERIA_LIST.filter(
-    (c) => c.status === 'competent' || c.status === 'confident'
+    (c) => userCriteriaSet.has(c.code) || c.status === 'competent' || c.status === 'confident'
   );
 
   return (

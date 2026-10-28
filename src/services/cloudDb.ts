@@ -105,15 +105,18 @@ export async function syncStudentProgressToCloud(data: {
   practicalRatioPercent: number;
   completedCriteria?: string[];
   lastLessonId?: string;
-}) {
+}): Promise<boolean> {
   try {
-    if (!navigator.onLine) return; // offline-first
-    await fetch('/api/students/sync', {
+    if (!navigator.onLine) return false; // offline-first
+    const res = await fetch('/api/students/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
+    const json = await safeParseJson(res);
+    return Boolean(json?.success);
   } catch (err) {
     console.warn('Failed to sync progress to cloud, cached in IndexedDB:', err);
+    return false;
   }
 }
