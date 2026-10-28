@@ -22,6 +22,7 @@ const MainAppContent: React.FC = () => {
   const { 
     activeTab, 
     setActiveTab, 
+    setActiveLesson,
     isAuthenticated,
     isStudentAuthModalOpen, 
     closeStudentAuthModal, 
@@ -31,6 +32,10 @@ const MainAppContent: React.FC = () => {
 
   const handleSelectZone = (zone: Zone) => {
     // Switch to Today's mission with relevant zone context
+    import('./data/lessons').then(({ SEED_LESSONS }) => {
+      const match = SEED_LESSONS.find(l => l.weekNumber === zone.weekNumber);
+      if (match) setActiveLesson(match);
+    });
     setActiveTab('today');
   };
 

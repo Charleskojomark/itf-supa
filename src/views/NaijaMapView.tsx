@@ -58,9 +58,11 @@ export const NaijaMapView: React.FC<{ onSelectZone: (zone: Zone) => void }> = ({
       {/* 15 Zones Path List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}>
         {NAIJA_ZONES.map((zone, idx) => {
-          const isCurrent = (profile?.currentZone ?? 1) === zone.weekNumber;
-          const isPassed = (profile?.currentZone ?? 1) > zone.weekNumber;
-          const isLocked = (profile?.currentZone ?? 1) < zone.weekNumber;
+          const effectiveZone = Math.max(profile?.currentZone ?? 2, 2);
+          const isCurrent = effectiveZone === zone.weekNumber;
+          const isPassed = effectiveZone > zone.weekNumber;
+          // Week 1 and Week 2 are unlocked; Week 3+ unlocks as student advances
+          const isLocked = zone.weekNumber > 2 && effectiveZone < zone.weekNumber;
 
           return (
             <div 

@@ -35,10 +35,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       [userId, fullName.trim(), cleanEmail, cleanPhone, passwordHash, squadId || 'squad_eko', avatar || '👨🏾‍💻']
     );
 
-    // Initialize progress
+    // Initialize progress with Week 2 unlocked
     await pool.query(
       `INSERT INTO public.student_progress (user_id, current_zone, xp, level, streak_days, grace_tokens, total_theory_seconds, total_practical_seconds, practical_ratio_percent)
-       VALUES ($1, 1, 50, 1, 1, 3, 0, 0, 80)`,
+       VALUES ($1, 2, 50, 1, 1, 3, 0, 0, 80)`,
       [userId]
     );
 
@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         xp: 50,
         level: 1,
         streakDays: 1,
-        currentZone: 1,
+        currentZone: 2,
         practicalRatioPercent: 80,
       }
     });

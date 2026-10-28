@@ -39,7 +39,7 @@ export const INITIAL_PROFILE: LearnerProfile = {
   avatar: '🚀',
   squadId: 'squad-eko-01',
   role: 'learner',
-  currentZone: 1, // Lagos Island
+  currentZone: 2, // Week 2 Unlocked (Ibadan Cocoa House)
   xp: 120,
   level: 1,
   streakDays: 4,
